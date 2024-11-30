@@ -1,5 +1,8 @@
 package io.quarkus.sample;
 
+import io.opentelemetry.api.metrics.LongCounter;
+import io.opentelemetry.api.metrics.Meter;
+
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -16,11 +19,21 @@ public class TodoResource {
 
     private static final Logger LOG = Logger.getLogger(TodoResource.class);
 
+    private final LongCounter counter;
+
     @Inject
     TodoRepository todoRepository;
 
+    public TodoResource(Meter meter) { 
+        counter = meter.counterBuilder("get-all-todos-metrics") 
+            .setDescription("get-all-todos-metrics")
+            .setUnit("invocations")
+            .build();
+    }
+
     @GET
     public List<Todo> getAll() {
+        counter.add(1);
         List<Todo> todos = todoRepository.findAll();
         LOG.info("Found " + todos.size() + " todos");
         return todos;
